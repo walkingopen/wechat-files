@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist",
   "projectname": "wechat-files",
   "description": "wechat files storage",
-  "appid": "touristappid",
+  "appid": "wxec8322460c2bddff",
   "setting": {
     "urlCheck": true,
     "es6": false,

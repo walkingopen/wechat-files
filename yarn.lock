@@ -9033,8 +9033,7 @@
   "version" "4.0.0"
 
 "pdf-poppler@^0.2.1":
-  "integrity" "sha512-ilrm02mfsha1pR1wmiVKNRIkjvSo70gorg3DIPOzCl6pFU5S39z+gTHLiwIKn808H4YVYVnm6JstUhGNfiGKXg=="
-  "resolved" "https://registry.npmjs.org/pdf-poppler/-/pdf-poppler-0.2.1.tgz"
+  "resolved" "git+ssh://git@github.com/drl-max/pdf-poppler.git#9164c06470f798de818ca175d50520fbe8738d32"
   "version" "0.2.1"
 
 "pend@~1.2.0":

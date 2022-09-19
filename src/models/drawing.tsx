@@ -4,11 +4,13 @@ import * as cache from "../utils/cache";
 import { isConnected } from "../utils/network";
 import Taro from "@tarojs/taro";
 
-
 const enterprise_cache_key: string = 'enterpriseList'
 const project_cache_key: string = 'projectList'
 const model_cache_key: string = 'modelList'
 const drawing_cache_key: string = 'drawingList'
+
+const FS = Taro.getFileSystemManager()
+const USER_PATH = Taro.env.USER_DATA_PATH
 
 interface GetProjectListRequest {
   enterpriseId: string,
@@ -130,6 +132,107 @@ export function getModelDrawingList(params: GetModelDrawingRequest) {
     }
   })
 }
+
+/**
+ * 获取指定图纸信息
+ * @param modelId 模型id
+ * @param drawingId 图纸id
+ */
+export function getModelDrawing(modelId: string, drawingId: string) {
+  const cacheKey = `${drawing_cache_key}.${modelId}`
+  const modelList = cache.getCache(cacheKey) || []
+  // 找到即返回
+  return modelList.find((item: any) => item.id == drawingId)
+}
+
+/**
+ * 获取指定图纸文件（Pdf）
+ * @param modelId 模型id
+ * @param drawingId 图纸id
+ * @param storageFileId 文件存储id
+ */
+ export function getModelDrawingPdfFile(modelId: string, drawingId: string, storageFileId: string) {
+  const fileDir = `${USER_PATH}/${modelId}`
+  try {
+    FS.accessSync(fileDir)
+  } catch(err) {
+    FS.mkdirSync(fileDir)
+  }
+
+  return new Promise((resolve, reject) => {
+    const fileKey = `${drawingId}-${storageFileId}`
+    if (isConnected()) {
+      // 从线上获取图纸文件
+      request.postJson(`${modelApi.getDrawingFileDownloadUrl}?collectionId=${modelId}`, {}, {appName: "web", storageFileId: storageFileId}, true)
+        .then((res: any) => {
+          const downloadUrl = res.downloadUrl
+          console.log(downloadUrl)
+          Taro.downloadFile({
+            url: downloadUrl.replace(/\/downloadFileName\//g, '/downloadFileName/flag-'),
+            filePath: `${fileDir}/${fileKey}.pdf`,
+            success: () => {
+              resolve([ `${fileDir}/${fileKey}.pdf` ])
+            },
+            fail: err => {
+              reject(err)
+            }
+          })
+        }).catch(err => {
+          reject(err)
+        })
+    } else {
+      const files = FS.readdirSync(fileDir)
+      resolve(files.map(f => `${fileDir}/${f}`))
+    }
+  })
+}
+
+/**
+ * 获取指定图纸文件（Image）
+ * @param modelId 模型id
+ * @param drawingId 图纸id
+ * @param storageFileId 文件存储id
+ */
+ export function getModelDrawingFile(modelId: string, drawingId: string, storageFileId: string) {
+  const fileDir = `${USER_PATH}/${modelId}`
+  try {
+    FS.accessSync(fileDir)
+  } catch(err) {
+    FS.mkdirSync(fileDir)
+  }
+
+  // TODO: 使用一张已经转换并上传到服务器的图纸图片作为示例
+  const finalModelId = '8220d024df2e474fb28129744e514009'
+  const finalStorageFileId = '7bbd775eb3f243c796e27d9c4d460345' //a29bb09e619d466399c6f0338255518f
+  return new Promise((resolve, reject) => {
+    const fileKey = `${drawingId}-${storageFileId}`
+    if (isConnected()) {
+      // 从线上获取图纸文件
+      request.postJson(`${modelApi.getDrawingFileDownloadUrl}?collectionId=${finalModelId}`, {}, {appName: "web", storageFileId: finalStorageFileId}, true)
+        .then((res: any) => {
+          const downloadUrl = res.downloadUrl
+          Taro.downloadFile({
+            url: downloadUrl.replace(/\/downloadFileName\//g, '/downloadFileName/flag-'),
+            filePath: `${fileDir}/${fileKey}.jpg`,
+            success: res => {
+              console.log(res)
+              resolve([ `${fileDir}/${fileKey}.jpg` ])
+            },
+            fail: err => {
+              reject(err)
+            }
+          })
+        }).catch(err => {
+          reject(err)
+        })
+    } else {
+      const files = FS.readdirSync(fileDir)
+      resolve(files.map(f => `${fileDir}/${f}`))
+    }
+  })
+}
+
+
 
 /**
  * 监听网络状态并体现在标题栏上

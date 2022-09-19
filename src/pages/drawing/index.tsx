@@ -18,7 +18,7 @@ export default class Index extends Component<PropsWithChildren> {
 
     componentDidMount(): void {
         var that = this
-        navigatorBarTitleNetStatusLisener('选择企业')
+        navigatorBarTitleNetStatusLisener('模型协同')
         getEnterpriseList().then((data: any) => {
             that.setState({
                 enterpriseList: data
@@ -105,7 +105,7 @@ export default class Index extends Component<PropsWithChildren> {
             <Text className='project-title'>图纸列表：</Text>
             <ScrollView scrollY={true} className="scroll-project-list">
                 {
-                    drawingList.filter((item: any) => !!item.drawingName).map((item:any) => {
+                    drawingList.filter((item: any) => !!item.drawingName && item.drawingName.indexOf('.pdf') !== -1).map((item:any) => {
                         return <Text className="scroll-project-list-text" onClick={this.chooseDrawing.bind(this, item)}>{item.drawingName}</Text>
                     })
                 }

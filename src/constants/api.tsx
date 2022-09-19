@@ -58,6 +58,7 @@ export const modelApi = {
   getFileVersionList: `${API_MODEL_DOMAIN}/v1/cloudm/files/{drawingId}/versions?collectionId={modelId}&enterpriseId={companyId}&projectId={projectId}`, // 获取文件版本列表
   getDrawingsVersion: `${API_MODEL_DOMAIN}/v1/cloudModelDrawing/drawings/version?collectionId={modelId}&fileId={fileId}&fileVersionId={fileVersionId}`, // 根据版本获取图纸列表
   getFileDownloadUrl: `${API_MODEL_DOMAIN}/v1/file:download`, // 获取文件下载地址
+  getDrawingFileDownloadUrl: `${API_MODEL_DOMAIN}/v1/cloudModelDrawing/file:download`, // 获取文件下载地址
   getAnnotationList: `${API_MODEL_DOMAIN}/v1/annotations?collectionId={modelId}&bizId={bizId}&bizType=cloud_model&isDesc={isDesc}&displayCurrent={displayCurrent}&currentLoadModel={currentLoadModel}&archive=false`, // 获取批注列表
   getAnnotationDetail: `${API_MODEL_DOMAIN}/v1/annotations/{annotationId}?collectionId={modelId}`,
   getAnnotationInfo2D: `${API_MODEL_DOMAIN}/v1/annotations/{annotationId}/info/2d?collectionId={modelId}&currentDrawingVersionId={currentDrawingVersionId}`,

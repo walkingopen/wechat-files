@@ -1,0 +1,29 @@
+
+.scroll-entperise-list {
+    height: 400px;
+    width: 80%;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+}
+.scroll-entperise-list-text {
+    border-bottom: 1px solid blue;
+    display: block
+}
+
+
+.project-title {
+    margin-top: 20px;
+    display: block;
+}
+.scroll-project-list {
+    height: 400px;
+    width: 80%;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+}
+.scroll-project-list-text {
+    border-bottom: 1px solid blue;
+    display: block
+}

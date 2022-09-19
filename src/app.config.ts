@@ -3,6 +3,8 @@ export default defineAppConfig({
     "pages/tempFile/index",
     "pages/localFile/index",
     "pages/messageFile/index",
+    "pages/drawing/index",
+    "pages/drawing/drawing2image",
   ],
   window: {
     backgroundTextStyle: "light",
@@ -23,6 +25,10 @@ export default defineAppConfig({
       {
         pagePath: "pages/messageFile/index",
         text: "会话文件"
+      },
+      {
+        pagePath: "pages/drawing/index",
+        text: "模型协同"
       },
     ]
   }

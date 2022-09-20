@@ -1,10 +1,11 @@
 import { Component, PropsWithChildren } from 'react'
 import { View, Image, Button } from '@tarojs/components'
-import './index.scss'
+import './drawing2image.scss'
 import Taro from '@tarojs/taro'
 import { getModelDrawing, getModelDrawingFile, getModelDrawingPdfFile } from '../../models/drawing'
+import { isConnected } from '../../utils/network'
 
-export default class Index extends Component<PropsWithChildren> {
+export default class Drawing2Image extends Component<PropsWithChildren> {
     // 建议在页面初始化时把 getCurrentInstance() 的结果保存下来供后面使用，
     // 而不是频繁地调用此 API
     $instance = Taro.getCurrentInstance();
@@ -20,12 +21,21 @@ export default class Index extends Component<PropsWithChildren> {
     previewDrawing() {
         const { model, drawing } = this.state;
         const drawingDetail: any = getModelDrawing(model, drawing)
-        Taro.setNavigationBarTitle(drawingDetail.drawingName || '')
-        //navigatorBarTitleNetStatusLisener(drawingDetail.drawingName || '')
+
+        const connected = isConnected()
+        const title = `${connected ? '(在线)' : '(离线)'}${drawingDetail.drawingName}`
+        Taro.setNavigationBarTitle({title: title})
+
         getModelDrawingFile(model, drawing, drawingDetail.storageFileId).then((data:any) => {
-            this.setState({
-                fileList: data
-            })
+            // this.setState({
+            //     fileList: data
+            // })
+            const filePath = data.find(() => true)
+            if (!filePath) {
+                Taro.showToast({title: '没有找到图纸文件(Image)', icon: 'none'})
+            } else {
+                Taro.navigateTo({url: `./showImageDrawing?filePath=${encodeURIComponent(filePath)}&filename=${encodeURIComponent(drawingDetail.drawingName)}`})
+            }
         })
     }
 
@@ -34,9 +44,12 @@ export default class Index extends Component<PropsWithChildren> {
         const drawingDetail: any = getModelDrawing(model, drawing)
         console.log(drawingDetail)
         getModelDrawingPdfFile(model, drawing, drawingDetail.storageFileId).then((data:any) => {
-            if (data.length > 0) {
+            const filePath = data.find(() => true)
+            if (!filePath) {
+                Taro.showToast({title: '没有找到图纸文件(PDF)', icon: 'none'})
+            } else {
                 Taro.openDocument({
-                    filePath: data[0],
+                    filePath: filePath,
                     fileType: 'pdf',
                     showMenu: true,
                 })

@@ -5,6 +5,7 @@ export default defineAppConfig({
     "pages/messageFile/index",
     "pages/drawing/index",
     "pages/drawing/drawing2image",
+    "pages/drawing/showImageDrawing",
   ],
   window: {
     backgroundTextStyle: "light",

@@ -74,9 +74,9 @@ export default class Index extends Component<PropsWithChildren> {
 
     render () {
         const { enterpriseList, projectList, modelList, drawingList } = this.state
-        return <View>
+        return <View style={"padding-left: 20px;"}>
             <Text>企业列表：</Text>
-            <ScrollView scrollY={true} className="scroll-entperise-list">
+            <ScrollView scrollY={true} enableFlex={true} className="scroll-entperise-list">
                 {
                     enterpriseList.map((item:any) => {
                         return <Text className="scroll-entperise-list-text" onClick={this.chooseEnterprise.bind(this, item)}>{item.name}</Text>
@@ -85,7 +85,7 @@ export default class Index extends Component<PropsWithChildren> {
             </ScrollView>
 
             <Text className='project-title'>项目列表：</Text>
-            <ScrollView scrollY={true} className="scroll-project-list">
+            <ScrollView scrollY={true} enableFlex={true} className="scroll-project-list">
                 {
                     projectList.map((item:any) => {
                         return <Text className="scroll-project-list-text" onClick={this.chooseProject.bind(this, item)}>{item.name + '-' + item.caseName}</Text>
@@ -94,7 +94,7 @@ export default class Index extends Component<PropsWithChildren> {
             </ScrollView>
 
             <Text className='project-title'>模型列表：</Text>
-            <ScrollView scrollY={true} className="scroll-project-list">
+            <ScrollView scrollY={true} enableFlex={true} className="scroll-project-list">
                 {
                     modelList.map((item:any) => {
                         return <Text className="scroll-project-list-text" onClick={this.chooseModel.bind(this, item)}>{item.name}</Text>
@@ -103,7 +103,7 @@ export default class Index extends Component<PropsWithChildren> {
             </ScrollView>
 
             <Text className='project-title'>图纸列表：</Text>
-            <ScrollView scrollY={true} className="scroll-project-list">
+            <ScrollView scrollY={true} enableFlex={true} className="scroll-project-list">
                 {
                     drawingList.filter((item: any) => !!item.drawingName && item.drawingName.indexOf('.pdf') !== -1).map((item:any) => {
                         return <Text className="scroll-project-list-text" onClick={this.chooseDrawing.bind(this, item)}>{item.drawingName}</Text>

@@ -2,7 +2,7 @@ import { modelApi, projectApi } from "../constants/api";
 import * as request from "../utils/request";
 import * as cache from "../utils/cache";
 import { isConnected } from "../utils/network";
-import Taro from "@tarojs/taro";
+import Taro, { getCurrentPages } from "@tarojs/taro";
 
 const enterprise_cache_key: string = 'enterpriseList'
 const project_cache_key: string = 'projectList'
@@ -166,7 +166,6 @@ export function getModelDrawing(modelId: string, drawingId: string) {
       request.postJson(`${modelApi.getDrawingFileDownloadUrl}?collectionId=${modelId}`, {}, {appName: "web", storageFileId: storageFileId}, true)
         .then((res: any) => {
           const downloadUrl = res.downloadUrl
-          console.log(downloadUrl)
           Taro.downloadFile({
             url: downloadUrl.replace(/\/downloadFileName\//g, '/downloadFileName/flag-'),
             filePath: `${fileDir}/${fileKey}.pdf`,
@@ -182,7 +181,7 @@ export function getModelDrawing(modelId: string, drawingId: string) {
         })
     } else {
       const files = FS.readdirSync(fileDir)
-      resolve(files.map(f => `${fileDir}/${f}`))
+      resolve(files.filter(f => f == `${fileKey}.pdf`).map(f => `${fileDir}/${f}`))
     }
   })
 }
@@ -214,8 +213,7 @@ export function getModelDrawing(modelId: string, drawingId: string) {
           Taro.downloadFile({
             url: downloadUrl.replace(/\/downloadFileName\//g, '/downloadFileName/flag-'),
             filePath: `${fileDir}/${fileKey}.jpg`,
-            success: res => {
-              console.log(res)
+            success: () => {
               resolve([ `${fileDir}/${fileKey}.jpg` ])
             },
             fail: err => {
@@ -227,7 +225,7 @@ export function getModelDrawing(modelId: string, drawingId: string) {
         })
     } else {
       const files = FS.readdirSync(fileDir)
-      resolve(files.map(f => `${fileDir}/${f}`))
+      resolve(files.filter(f => f == `${fileKey}.jpg`).map(f => `${fileDir}/${f}`))
     }
   })
 }
@@ -239,10 +237,10 @@ export function getModelDrawing(modelId: string, drawingId: string) {
  */
  export function navigatorBarTitleNetStatusLisener(title: string) {
   setInterval(() => {
-      if (isConnected()) {
-        Taro.setNavigationBarTitle({title: `${title}(在线)`})
-      } else {
-        Taro.setNavigationBarTitle({title: `${title}(离线)`})
-      }
+    if (isConnected()) {
+      Taro.setNavigationBarTitle({title: `(在线)${title}`})
+    } else {
+      Taro.setNavigationBarTitle({title: `(离线)${title}`})
+    }
   }, 3000);
 }

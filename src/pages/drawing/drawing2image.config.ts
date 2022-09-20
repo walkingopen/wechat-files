@@ -1,3 +1,3 @@
 export default definePageConfig({
-    navigationBarTitleText: '图片图纸'
+    navigationBarTitleText: '图纸资源'
   })

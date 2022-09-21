@@ -68,6 +68,7 @@ export const modelApi = {
   editAnnotation: `${API_MODEL_DOMAIN}/v1/annotation/{annotationId}`,
   getAnnotationFiles: `${API_MODEL_DOMAIN}/v1/annotations/{annotationId}/files?needFileUrl=true&fileType=`,
   getAnnotationCommentFiles: `${API_MODEL_DOMAIN}/v1/annotations/{annotationId}/comments/{commentId}/files?needFileUrl=true`,
+  getModelDrawingAnnotations: `${API_MODEL_DOMAIN}/v1/drawings/{drawingId}/annotations`,
 }
 /**
  * 存储相关Api定义

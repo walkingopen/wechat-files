@@ -1,8 +1,11 @@
 import { Component, PropsWithChildren } from 'react'
-import { View, Canvas, Button } from '@tarojs/components'
+import { View, Canvas, Button, Image, Slider, CoverView } from '@tarojs/components'
 import './drawing2image.scss'
 import Taro from '@tarojs/taro'
-import { isConnected } from '../../utils/network';
+import { isConnected } from '../../utils/network'
+import pinImg from '../../assets/pin.png'
+import pinActiveImg from '../../assets/pin-active.png'
+import { getModelDrawingMarkupList } from '../../models/drawing'
 
 export default class ShowImageDrawing extends Component<PropsWithChildren> {
     // 建议在页面初始化时把 getCurrentInstance() 的结果保存下来供后面使用，
@@ -14,17 +17,22 @@ export default class ShowImageDrawing extends Component<PropsWithChildren> {
         filename: '',
         canvas: null,
         context: null,
-        distance: 0,
+        image: {},
         scale: 1,
-        baseWidth: 0,
-        baseHeight: 300,
+        slider: 1,
+        baseWidth: 300,
+        baseHeight: 600,
         scaleWidth: 300,
         scaleHeight: 600,
-        distanceDiff: 0,
+        markupList: [],
+        showMarkup: false,
+        modelId: '',
+        drawingId: '',
+        cloudModelFileId: '',
     }
 
     componentWillMount(): void {
-        const { filename, filePath } = this.$instance.router?.params || {}
+        const { filename, filePath, modelId, drawingId, cloudModelFileId } = this.$instance.router?.params || {}
         const realFilename: string = !!filename ? decodeURIComponent(filename) : ''
         const realFilePath: string = !!filePath ? decodeURIComponent(filePath) : ''
 
@@ -35,7 +43,12 @@ export default class ShowImageDrawing extends Component<PropsWithChildren> {
         this.setState({
             filePath: realFilePath,
             filename: realFilename,
+            cloudModelFileId: cloudModelFileId,
+            modelId: modelId,
+            drawingId: drawingId,
         })
+
+        this.getImageInfo(realFilePath)
     }
 
     componentDidMount(): void {
@@ -60,84 +73,170 @@ export default class ShowImageDrawing extends Component<PropsWithChildren> {
             canvas.width = width * dpr
             canvas.height = height * dpr
             context.scale(dpr, dpr)
+
+            const image = canvas.createImage()
+
             that.setState({
                 canvas: canvas,
-                context: context
+                context: context,
+                image: image,
             }, () => {
                 that.drawingCat()
             })
         })
     }
 
-    drawingCat() {
-        const { filePath, context, canvas, scaleWidth, scaleHeight } = this.state
-        console.log('===', scaleWidth, scaleHeight)
-        // 图片对象
-        const image = canvas.createImage()
-        // 图片加载完成回调
-        image.onload = () => {
-            // 将图片绘制到 canvas 上
-            context.drawImage(image, 0, 0, scaleWidth, scaleHeight)
-        }
-        image.src = filePath
-    }
-
-
-    touchStart(e) {
-        // 单手指缩放开始，也不做任何处理
-        if(e.touches.length == 1) return
-        console.log('双手指触发开始')
-        // 注意touchstartCallback 真正代码的开始
-        // 一开始我并没有这个回调函数，会出现缩小的时候有瞬间被放大过程的bug
-        // 当两根手指放上去的时候，就将distance 初始化。
-        let xMove = e.touches[1].x - e.touches[0].x;
-        let yMove = e.touches[1].y - e.touches[0].y;
-        let distance = Math.sqrt(xMove * xMove + yMove * yMove);
-        this.setState({
-            distance: distance,
-        })
-    }
-
-    touchMove(e) {
+    scaleChange(e) {
         var that = this
-        const { distance, scale, baseWidth, baseHeight } = this.state
-        // 单手指缩放我们不做任何操作
-        console.log(e.touches)
-        if(e.touches.length == 1) return
-        console.log('双手指运动')
-        const xMove = e.touches[1].x - e.touches[0].x;
-        const yMove = e.touches[1].y - e.touches[0].y;
-        // 新的 ditance
-        const newDistance = Math.sqrt(xMove * xMove + yMove * yMove);
-        const distanceDiff = newDistance - distance;
-        let newScale = scale + 0.005 * distanceDiff
+        const customScale: number = e.detail.value
+        const { scale, baseWidth, baseHeight } = this.state
+        let newScale = Number((customScale / scale).toFixed(1))
+        console.log(newScale)
         // 为了防止缩放得太大，所以scale需要限制，同理最小值也是
-        if(newScale >= 3) {
-          newScale = 3
+        if(newScale >= 2) {
+          newScale = 2
         }
         if(newScale <= 0.6) {
           newScale = 0.6
         }
         const newScaleWidth = newScale * baseWidth
         const newScaleHeight = newScale * baseHeight
+
         // 赋值 新的 => 旧的
         this.setState({
-          distance: newDistance,
           scale: newScale,
+          slider: customScale,
           scaleWidth: newScaleWidth,
           scaleHeight: newScaleHeight,
-          distanceDiff: distanceDiff
         }, () => {
           that.drawingCat()
+          that.rescaleMarkupPointPositions(newScaleWidth, newScaleHeight)
+        })
+    }
+
+    drawingCat() {
+        const { context, canvas, image, filePath, scale, scaleWidth, scaleHeight } = this.state
+        // 清理图片: 如何清理
+        context.clearRect(0, 0, canvas.width, canvas.height)
+  
+        // 重新绘制图片
+        context.scale(scale, scale)
+        // 图片对象
+        //const image = canvas.createImage()
+        // 图片加载完成回调
+        image.onload = () => {
+            // 将图片绘制到 canvas 上
+            context.drawImage(image, 0, 0, scaleWidth, scaleHeight)
+        }
+        image.src = filePath
+
+        //
+        this.rescaleMarkupPointPositions(scaleWidth, scaleHeight)
+    }
+
+    getImageInfo(filePath: string) {
+        Taro.getImageInfo({
+            src: filePath,
+            success: res => {
+                // 适配画布的原始大小
+                const widthB = res.width / 370
+                const heightB = res.width / 500
+                const maxB = Math.max(widthB, heightB)
+                const width = res.width / maxB
+                const height = res.height/ maxB
+                this.setState({
+                    baseWidth: width,
+                    baseHeight: height,
+                    scaleWidth: width,
+                    scaleHeight: height,
+                })
+            }
+        })
+    }
+
+    canvasClick(e) {
+        // 所有标注点改为 未选中 状态
+        const { markupList } = this.state
+        markupList.forEach((mark: any) => {
+            mark.active = false
+        })
+        this.setState({
+            markupList: markupList,
+        })
+    }
+    markupClick(mark) {
+        const { markupList } = this.state
+        markupList.forEach((mark: any) => {
+            mark.active = true
+        })
+        this.setState({
+            markupList: markupList,
+        })
+
+        // 展示批注想起信息
+        Taro.showActionSheet({
+            itemList: [ `NO.${mark.markup.sequence}`, mark.markup.content, mark.markup.createdByName ],
+            success: function (res) {
+                console.log(res.tapIndex)
+            },
+            fail: function (res) {
+                console.log(res.errMsg)
+            }
+        })
+    }
+    showMarkupPoints() {
+        const { modelId, drawingId, cloudModelFileId, scaleWidth, scaleHeight, showMarkup } = this.state
+        if (!showMarkup) {
+            getModelDrawingMarkupList({collectionId: modelId, drawingId: drawingId, cloudModelFileId: cloudModelFileId, drawingName: '', needScreenshotUrl: false })
+            .then((data: Array<any>) => {
+                if (!data || data.length == 0) {
+                    Taro.showToast({title: '没有2D批注信息', icon: 'none', duration: 2000})
+                } else {
+                    const validList = data.filter((m: any) => m.markup.markup2DInfo && m.markup.markup2DInfo !== "" && m.markup.markup2DInfo.drawingPosition && m.markup.markup2DInfo.drawingPosition.length == 2)
+                    if (!validList || validList.length == 0) {
+                        Taro.showToast({title: '没有2D批注信息', icon: 'none', duration: 2000})
+                    } else {
+                        this.setState({
+                            markupList: validList.map((m: any) => {
+                                const position: Array<number> =  m.markup.markup2DInfo.drawingPosition
+                                return { ...m, active: false, left: scaleWidth * position[0], top: (scaleHeight - scaleHeight * position[1]) } 
+                            }),
+                            showMarkup: true
+                        })
+                    }
+                }
+            })
+        } else {
+            this.setState({ showMarkup: false })
+            const { markupList } = this.state
+            if (!markupList || markupList.length == 0) {
+                Taro.showToast({title: '没有2D批注信息', icon: 'none', duration: 2000})
+            }
+        }
+    }
+    rescaleMarkupPointPositions(scaleWidth: number, scaleHeight: number) {
+        const { markupList } = this.state
+        this.setState({
+            markupList: markupList.map((m: any) => {
+                const position: Array<number> =  m.markup.markup2DInfo.drawingPosition
+                return { ...m, left: scaleWidth * position[0], top: (scaleHeight - scaleHeight * position[1]) }
+            })
         })
     }
 
     render() {
-        // const { filePath } = this.state
+        const { slider, markupList, showMarkup } = this.state
+        console.log(markupList)
         return <View>
-            <Button type='default' onClick={this.initCanvas.bind(this)}>手动初始化</Button>
-            <Canvas id="myCanvas" canvasId="myCanvas" style="border: 1px solid; width: 370px; height: 500px;" type="2d" onTouchStart={this.touchStart.bind(this)} onTouchMove={this.touchMove.bind(this)} />
-            {/* <Image src={filePath} mode='aspectFit' /> */}
+            <Button type='default' onClick={this.initCanvas.bind(this)}>手动加载图纸</Button>
+            <Slider min={0.5} max={2} step={0.5} value={slider} showValue={true} onChange={this.scaleChange.bind(this)} />
+            <Canvas id="myCanvas" canvasId="myCanvas" style="border: 1px solid; width: 370px; height: 500px; z-index: 1;" type="2d" onClick={this.canvasClick.bind(this)} />
+            {
+                showMarkup && markupList.map((mark: any) => {
+                    return <Image id={mark.markupId} src={mark.active ? pinActiveImg : pinImg} style={{height: "32px", width: "32px", left: `${mark.left}px`, top: `${mark.top}px`, position: "absolute", zIndex: 20}} onClick={this.markupClick.bind(this, mark)} />
+                })
+            }
+            <Button type='default' style={{marginTop: "20px"}} onClick={this.showMarkupPoints.bind(this)}>显示/隐藏批注点</Button>
         </View>
     }
 }

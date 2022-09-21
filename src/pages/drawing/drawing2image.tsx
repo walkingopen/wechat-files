@@ -34,7 +34,7 @@ export default class Drawing2Image extends Component<PropsWithChildren> {
             if (!filePath) {
                 Taro.showToast({title: '没有找到图纸文件(Image)', icon: 'none'})
             } else {
-                Taro.navigateTo({url: `./showImageDrawing?filePath=${encodeURIComponent(filePath)}&filename=${encodeURIComponent(drawingDetail.drawingName)}`})
+                Taro.navigateTo({url: `./showImageDrawing?filePath=${encodeURIComponent(filePath)}&filename=${encodeURIComponent(drawingDetail.drawingName)}&modelId=${model}&drawingId=${drawing}&cloudModelFileId=${drawingDetail.cloudModelFileId}`})
             }
         })
     }

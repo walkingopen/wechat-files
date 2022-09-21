@@ -2,12 +2,13 @@ import { modelApi, projectApi } from "../constants/api";
 import * as request from "../utils/request";
 import * as cache from "../utils/cache";
 import { isConnected } from "../utils/network";
-import Taro, { getCurrentPages } from "@tarojs/taro";
+import Taro from "@tarojs/taro";
 
 const enterprise_cache_key: string = 'enterpriseList'
 const project_cache_key: string = 'projectList'
 const model_cache_key: string = 'modelList'
 const drawing_cache_key: string = 'drawingList'
+const drawing_markup_cache_key: string = 'drawingMarkupList'
 
 const FS = Taro.getFileSystemManager()
 const USER_PATH = Taro.env.USER_DATA_PATH
@@ -32,6 +33,15 @@ interface GetModelDrawingRequest {
   collectionId: string;
   versionList: Array<string>;
 }
+interface GetModelDrawingMarkupRequest {
+  drawingId: string;
+  collectionId: string;
+  cloudModelFileId: string;
+  drawingName: string;
+  needScreenshotUrl: boolean;
+  t?: string;
+}
+
 
 /**
  * 模拟获取企业信息
@@ -230,6 +240,27 @@ export function getModelDrawing(modelId: string, drawingId: string) {
   })
 }
 
+/**
+ * 模拟获取图纸批注列表
+ * @param params 请求参数
+ */
+ export function getModelDrawingMarkupList(params: GetModelDrawingMarkupRequest) {
+  const cacheKey = `${drawing_markup_cache_key}.${params.collectionId}.${params.drawingId}`
+  return new Promise((resolve, reject) => {
+    if (isConnected()) {
+      request.getJson(modelApi.getModelDrawingAnnotations.replace('{drawingId}', params.drawingId), {}, params, true).then((res: any) => {
+        console.log(res)
+        cache.setCache(cacheKey, res.details);
+        resolve(res.details)
+      }).catch(err => {
+        reject(err)
+      })
+    } else {
+      // 离线: 从缓存中拿数据
+      resolve(cache.getCache(cacheKey) || [])
+    }
+  })
+}
 
 
 /**

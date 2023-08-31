@@ -10,11 +10,11 @@ class App extends Component<PropsWithChildren> {
       const connected = isConnected()
       console.log(connected)
       // 模拟登录
-      if (login.checkLogin()) {
-        login.navigateToHome()
-      } else if (connected) {
-        login.loginByPhone('17321135363', 'a123456')
-      }
+      // if (login.checkLogin()) {
+      //   login.navigateToHome()
+      // } else if (connected) {
+      //   login.loginByPhone('17321135363', 'a123456')
+      // }
     })
   }
 
